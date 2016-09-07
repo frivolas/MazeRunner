@@ -1,38 +1,56 @@
+// Maze Generator
+// by Oscar Frias (@_frix_) 2016
+// www.oscarfrias.com
+//
 // Let's write a depth-first, recursive bactracker algorithm to create a maze
 // based on https://en.wikipedia.org/wiki/Maze_generation_algorithm
-// and on https://www.youtube.com/watch?v=HyK_Q5rrcr4
+// and especially on https://www.youtube.com/watch?v=HyK_Q5rrcr4
+// Thanks Dan!
 
+// Libraries needed
 import processing.pdf.*;
+import java.io.FilenameFilter;
 
-int w = 10;     // size of the cell in px
-int border;
-int cols,rows;  // to define the size of the maze
-int startX, startY, endX, endY;
-int lastIndex;
+// Some variables
+int w = 10;                       // size of the cell in px
+int border;                       // spacing around the square that will be drawn for the start and finish cells so that the edges are not hidden
+int cols,rows;                    // to define the size of the maze
+int startX, startY, endX, endY;   // coordinates for the start and finish cells
+int lastIndex;                    // to verify if the stack still contains something
+
+// Arraylists to store the maze and the stack
 ArrayList grid;
 ArrayList stack;
+
+// Cell objects
 Cell current,top,right,bottom,left;
-color cellColor = color(0,114,204,100);
-color endColor = color(255,255,255);
-color startColor = color(0,255,0);
-color finishColor = color(255,0,0);
-color highlightColor = color(255,255,255,100);
+
+// Colors for the cells
+color cellColor = color(0,114,204,100);         // color for the visited cells - cool blue
+color endColor = color(255,255,255);            // color for when the maze is shown to be saved in the PDF - white
+color startColor = color(0,255,0);              // color for the start cell - Green
+color finishColor = color(255,0,0);             // color for the finish cell - Red
+color highlightColor = color(255,255,255,100);  // color for highlighting the current cell - White with alpha
+
+// Maze save path
+String thePath = "C:/Users/Oscar/Documents/Processing/Works/Maze/MazeGenerator/Mazes";  //change this to the location where you want the mazes saved.
 
 
 void setup(){
   //initialize the maze
-  size(1700,1100);  // Spec the size of the maze
+  size(1700,1100);  // Spec the size of the maze in px
   background(0);    // black bg
   border = w/10;    // set the border around the highlighted cell (to be able to show the walls)
-  // frameRate(10);
 
   //define the grid
   cols= floor(width/w);
   rows= floor(height/w);
   println("Painting a " + cols + " x " + rows + " Grid");
-  // define the grid and stack ArrayLists
+
+  // initialize the grid and stack ArrayLists
   grid = new ArrayList();
   stack = new ArrayList();
+
   // for each row, go through every column and add a cell to the grid
   for(int j=0; j<rows; j++){
     for(int i=0; i<cols; i++){
@@ -41,14 +59,20 @@ void setup(){
     }
   }
 
-  int startPos = defineStart();
-  int finishPos = defineFinish();
-  while(abs(finishPos-startPos) < grid.size()*.75) {
-    finishPos = defineFinish();
-  }
+  // Lets assign the start and finish cells
+  int startPos = defineStart();   // Returns the first cell in the Grid
+  int finishPos = defineFinish(); // Currently returns the last cell in the Grid, could be anything else
+
+  // Make sure the finish is far from the start
+  // while(abs(finishPos-startPos) < grid.size()*.95) {
+  //   finishPos = defineFinish();
+  // }
+
   println("Start cell: " + startPos + " | Finish Cell: " + finishPos);
   Cell theStart = (Cell) grid.get(startPos);
   Cell theFinish = (Cell) grid.get(finishPos);
+
+  // Change the booleans of the start and finish cells
   theStart.isStart = true;
   theFinish.isFinish = true;
 
@@ -79,11 +103,14 @@ void draw(){
     current = next;
   }
 
+// If the stack has something, then remove the last cell of the stack
+// and make the new last cell of the stack the current one
   else if (stack.size() > 0) {
-    int last = stack.size()-1;
+    int last = stack.size()-1;  //
     println("last=" + last + " Stack size=" + stack.size());
     stack.remove(last);
     // println("new stack length=" + stack.size());
+
     if(stack.size() > 0) {
       last = last-1;
       current = (Cell) stack.get(last);
@@ -94,8 +121,16 @@ void draw(){
     // The stack is empty and there's no more neigbors:
     // the maze is done!
     // Let's save it as a PDF
-    beginRecord(PDF,"/Mazes/Maze-####.pdf");
-    println("Saving PDF");
+
+    // Assign a name to the PDF file
+    String fileName = nameAMaze();
+
+    // To save the maze we'll re-draw the grid
+    // now with the walls as they ended up being after
+    // carving the maze. And it's shown in white to be
+    // printer friendly
+    beginRecord(PDF,fileName);
+    println("Saving PDF: " + fileName);
     for(int i = 0; i<grid.size();i++){
       Cell each = (Cell) grid.get(i);
       // Paint every generic cell with the reuglar color
@@ -207,9 +242,9 @@ class Cell{
         /*
         Each cell has the next coords:
         (x,y)  ________ (x+w,y)
-        |        |
-        |        |
-        |________|
+              |        |
+              |        |
+              |________|
         (x,y+w)         (x+w,y+w)
         */
 
@@ -283,29 +318,32 @@ void removeWalls(Cell a, Cell b){
 }// end of removeWalls
 
 
+
+
 int defineStart(){
-  int randoStart = floor(random(0,grid.size()));
+  int randoStart = 0;//floor(random(0,grid.size()));
   return randoStart;
 }
 
+
+
+
 int defineFinish(){
-  int randoFinish = floor(random(0,grid.size()));
+  int randoFinish = floor(grid.size()-1); //floor(random(0,grid.size()));
   return randoFinish;
 }
 
-//
-// void showGoals(){
-//   for(int i=0; i<grid.size(); i++){
-//     Cell theCell = (Cell) grid.get(i);
-//     if (theCell.isStart){
-//       startX = theCell.i;
-//       startY = theCell.j;
-//     } else if (theCell.isFinish){
-//       endX = theCell.i;
-//       endX = theCell.j;
-//     }
-//   }
-//   noStroke();
-//   fill(0,255,0);
-//   rect(startX,startY,w,w);
-// }
+
+
+
+String nameAMaze(){
+  println("Naming the maze");
+  File f = dataFile(thePath);
+  String[] files = f.list();
+  println("There are " + files.length + " Mazes in the folder");
+  // printArray(fileNames);
+  int fileIndex = files.length + 1;
+  String fileName = "/Mazes/Maze-" + fileIndex + "-" + cols + "x" + rows + ".pdf";
+  println(fileName);
+  return fileName;
+}
