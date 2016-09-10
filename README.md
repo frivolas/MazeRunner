@@ -2,7 +2,7 @@
 By Oscar Frias - August 2016
 www.oscarfrias.com
 
-This is my Processing implementation for a depth-first recursive backtracker algorithm. It paints a grid of specific size and then carves a maze in it. The app finishes up by saving the image of the maze in a PDF file for you to print and play. 
+This is my Processing implementation for a depth-first recursive backtracker algorithm. It paints a grid of specific size and then carves a maze in it. The app finishes up by saving the image of the maze in a PDF file for you to print and play. The program then saves the maze as a JSON file to be called by the solver algorithm (Still on the works).
 
 __Based on:__
 - https://www.youtube.com/watch?v=HyK_Q5rrcr4
