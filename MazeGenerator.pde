@@ -12,7 +12,9 @@ import processing.pdf.*;
 import java.io.FilenameFilter;
 
 // Some variables
-int w = 10;                       // size of the cell in px
+int wd = 170;                    // width of the maze in pixels
+int ht = 110;                   // height of the maze in pixels
+int w = 20;                       // size of the cell in px
 int border;                       // spacing around the square that will be drawn for the start and finish cells so that the edges are not hidden
 int cols,rows;                    // to define the size of the maze
 int startX, startY, endX, endY;   // coordinates for the start and finish cells
@@ -36,9 +38,13 @@ color highlightColor = color(255,255,255,100);  // color for highlighting the cu
 String thePath = "C:/Users/Oscar/Documents/Processing/Works/Maze/MazeGenerator/Mazes";  //change this to the location where you want the mazes saved.
 
 
+// Settings is needed to be able to specify the size of the window with variables.
+void settings(){
+    size(wd,ht);  // Spec the size of the maze in px
+}
+
 void setup(){
   //initialize the maze
-  size(1700,1100);  // Spec the size of the maze in px
   background(0);    // black bg
   border = w/10;    // set the border around the highlighted cell (to be able to show the walls)
 
@@ -142,8 +148,11 @@ void draw(){
     }
     endRecord();
     println("Finished saving PDF");
-    noLoop(); //stop the program. Nothing else to do.
-    // exit();
+    println("Saving JSON file");
+    saveJMaze();
+    println("Done. Ba-bye!");
+    // noLoop(); //stop the program. Nothing else to do.
+    exit();
   }
 }
 
