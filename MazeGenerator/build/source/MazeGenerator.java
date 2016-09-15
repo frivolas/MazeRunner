@@ -1,3 +1,22 @@
+import processing.core.*; 
+import processing.data.*; 
+import processing.event.*; 
+import processing.opengl.*; 
+
+import processing.pdf.*; 
+import java.io.FilenameFilter; 
+
+import java.util.HashMap; 
+import java.util.ArrayList; 
+import java.io.File; 
+import java.io.BufferedReader; 
+import java.io.PrintWriter; 
+import java.io.InputStream; 
+import java.io.OutputStream; 
+import java.io.IOException; 
+
+public class MazeGenerator extends PApplet {
+
 // Maze Generator
 // by Oscar Frias (@_frix_) 2016
 // www.oscarfrias.com
@@ -8,8 +27,8 @@
 // Thanks Dan!
 
 // Libraries needed
-import processing.pdf.*;
-import java.io.FilenameFilter;
+
+
 
 // Some variables
 int wd = 1700;                    // width of the maze in pixels
@@ -28,11 +47,11 @@ ArrayList stack;
 Cell current,top,right,bottom,left;
 
 // Colors for the cells
-color cellColor = color(0,114,204,100);         // color for the visited cells - cool blue
-color endColor = color(255,255,255);            // color for when the maze is shown to be saved in the PDF - white
-color startColor = color(0,255,0);              // color for the start cell - Green
-color finishColor = color(255,0,0);             // color for the finish cell - Red
-color highlightColor = color(255,255,255,100);  // color for highlighting the current cell - White with alpha
+int cellColor = color(0,114,204,100);         // color for the visited cells - cool blue
+int endColor = color(255,255,255);            // color for when the maze is shown to be saved in the PDF - white
+int startColor = color(0,255,0);              // color for the start cell - Green
+int finishColor = color(255,0,0);             // color for the finish cell - Red
+int highlightColor = color(255,255,255,100);  // color for highlighting the current cell - White with alpha
 
 // Maze save path
 String thePath = "/Mazes";  //Relative location for mazes under your sketch folder. change this to the location where you want the mazes saved.
@@ -43,11 +62,11 @@ PGraphicsPDF pdfMaze;
 
 
 // Settings is needed to be able to specify the size of the window with variables.
-void settings(){
+public void settings(){
     size(wd,ht);  // Spec the size of the maze in px
 }
 
-void setup(){
+public void setup(){
   //initialize the maze
   background(0);    // black bg
   border = w/10;    // set the border around the highlighted cell (to be able to show the walls)
@@ -92,7 +111,7 @@ void setup(){
 
 
 
-void draw(){
+public void draw(){
   // Draw the grid
   for (int i =0; i<grid.size();i++){
     Cell each = (Cell) grid.get(i);
@@ -192,7 +211,7 @@ class Cell{
 
 
   // Calculate the index of the previous cell to find it in the ArrayList
-  int index(int i, int j){
+  public int index(int i, int j){
     if(i<0 || j<0 || i>cols-1 || j>rows-1){
       return -1; //will return an invalid index that will be caught by isNeighbor
     }
@@ -204,14 +223,14 @@ class Cell{
   // This function checks if the cell exists in the array,
   // and catches Java's error if it doesn't, preventing the
   // program to halt.
-  boolean isNeighbor(int theIndex){
+  public boolean isNeighbor(int theIndex){
     if(theIndex == -1) return false; // if it doesn't exists, then catch the error and return false
     else return true; // if it exists, then return true
   }
 
 
 
-  Cell checkNeighbors(){
+  public Cell checkNeighbors(){
     ArrayList neighbors = new ArrayList();
     boolean[] exist = {false,false,false,false};  //top,right,bottom,left
 
@@ -263,7 +282,7 @@ class Cell{
 
 
       // This function will draw the edges of the cell
-      void show(boolean theEnd){
+      public void show(boolean theEnd){
         /*
         Each cell has the next coords:
         (x,y)  ________ (x+w,y)
@@ -299,7 +318,7 @@ class Cell{
 
         } // End of Show()
 
-        void highlight(color theColor){
+        public void highlight(int theColor){
           int x = i*w;
           int y = j*w;
 
@@ -319,7 +338,7 @@ class Cell{
 } // end of class Cell
 
 
-void removeWalls(Cell a, Cell b){
+public void removeWalls(Cell a, Cell b){
   // check where the next cell is
   // First, check on X
   int x = a.i-b.i;
@@ -345,7 +364,7 @@ void removeWalls(Cell a, Cell b){
 
 
 
-int defineStart(){
+public int defineStart(){
   int randoStart = 0;//floor(random(0,grid.size()));
   return randoStart;
 }
@@ -353,7 +372,7 @@ int defineStart(){
 
 
 
-int defineFinish(){
+public int defineFinish(){
   int randoFinish = floor(grid.size()-1); //floor(random(0,grid.size()));
   return randoFinish;
 }
@@ -361,7 +380,7 @@ int defineFinish(){
 
 
 
-String nameAMaze(){
+public String nameAMaze(){
   println("Naming the maze");
   File f = dataFile(sketchPath(thePath));
   String[] files = f.list();
@@ -375,7 +394,7 @@ String nameAMaze(){
 
 
 
-void printTheMaze(String theMaze){
+public void printTheMaze(String theMaze){
   // Lets print the maze silently (no annoying print dialog)
   // If your acrobat reader is not setup for "Auto Rotate Landscape/Portrait"
   // then Acrobat will most likely force the maze to be printed in a
@@ -403,4 +422,93 @@ void printTheMaze(String theMaze){
   launch(launchThis);
   // just bluff
   println("Should have launched, and printed!");
+}
+// This sketch accompanies the MazeGenerator.pde master sketch
+// it contains the functions that save the Maze as a JSON file
+//
+// By Oscar Frias (@_frix_) 2016
+// www.oscarfrias.com
+//
+// What are we saving here?
+// We're saving all the grid ArrayList, which is an array of Cell objects
+// Each Cell has:
+// walls{} array of booleans
+// neighbors ArrayList of booleans
+// visited boolean
+// isStart boolean
+// isFinish boolean
+// i and j ints
+//
+// We don't need to save the neigbors, since they're only used to carve the maze.
+// A solving maze will look at the "walls" array and decide from there.
+// "visited" is also not necessary as it's only needed to carve the maze.
+// i and j are needed as they are the coordinates of the cell
+//
+// So, the JSONObject cell, will have the following fields:
+// i, j               (to locate the cell)
+// walls{}            (to solve the maze)
+// isStart, isFinish  (to know where to start and where to finish)
+//
+// The solver algorithm will have to create the Cell class again,
+// so it may be worth it to pull that code out into its own sketch.
+// It will also have to create a GRID ArrayList and fill it with the info pulled
+// from the JSON Maze file. Then solve it.
+
+JSONArray jMazeInfo;    // Array containing basic maze info: rows, cols
+JSONArray jGrid;        // This is the array of jCells, the grid
+JSONObject jCell;       // will be filled with each cell's info
+JSONObject jMazeData;   // for the maze data
+
+public void saveJMaze(){
+  // initialize our JSON Arrays
+  jMazeInfo = new JSONArray();
+  jGrid = new JSONArray();
+  jMazeData = new JSONObject();
+
+  jMazeData.setInt("width", wd);
+  jMazeData.setInt("height", ht);
+  jMazeData.setInt("cols", cols);
+  jMazeData.setInt("rows", rows);
+  jMazeData.setInt("cellsize", w);
+
+  jMazeInfo.setJSONObject(0,jMazeData);
+
+  jGrid.append(jMazeInfo);
+
+  for(int i=0; i<grid.size();i++){
+    // Initialize our JSON objects
+    jCell = new JSONObject();
+    // create a temp Cell object filled with the (i) element
+    // of the grid ArrayList to pull all its data
+    Cell tempJCell = (Cell) grid.get(i);
+    // Fill the jCell object:
+    jCell.setInt("id", i);
+    jCell.setInt("i", tempJCell.i);
+    jCell.setInt("j", tempJCell.j);
+    jCell.setBoolean("isStart", tempJCell.isStart);
+    jCell.setBoolean("isFinish", tempJCell.isFinish);
+
+    jCell.setBoolean("wall0", tempJCell.walls[0]);
+    jCell.setBoolean("wall1", tempJCell.walls[1]);
+    jCell.setBoolean("wall2", tempJCell.walls[2]);
+    jCell.setBoolean("wall3", tempJCell.walls[3]);
+
+    // Save the object into the JSON Array
+    jGrid.setJSONObject(i+1,jCell);
+  }
+  // Add the maze info to the JSON file
+
+  // Save the array into a JSON file
+  println("The maze is in a JSON array, saving the file now...");
+  saveJSONArray(jGrid, "data/test.json");
+  println("JSON file saved.");
+}
+  static public void main(String[] passedArgs) {
+    String[] appletArgs = new String[] { "MazeGenerator" };
+    if (passedArgs != null) {
+      PApplet.main(concat(appletArgs, passedArgs));
+    } else {
+      PApplet.main(appletArgs);
+    }
+  }
 }
