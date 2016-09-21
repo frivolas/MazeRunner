@@ -25,6 +25,11 @@ public class MazeGenerator extends PApplet {
 // based on https://en.wikipedia.org/wiki/Maze_generation_algorithm
 // and especially on https://www.youtube.com/watch?v=HyK_Q5rrcr4
 // Thanks Dan!
+//
+// This program will carve a maze, save it as both PDF and JSON.
+// The JSON file will be used by a maze solving algorithm,
+// the PDF will be opened in Acrobat Reader and sent it to your printer
+// so you can solve it by hand right away.
 
 // Libraries needed
 
@@ -51,6 +56,7 @@ int cellColor = color(0,114,204,100);         // color for the visited cells - c
 int endColor = color(255,255,255);            // color for when the maze is shown to be saved in the PDF - white
 int startColor = color(0,255,0);              // color for the start cell - Green
 int finishColor = color(255,0,0);             // color for the finish cell - Red
+int stackColor = color(0,78,119,100);         // color for the cells in the stack - greenish blue
 int highlightColor = color(255,255,255,100);  // color for highlighting the current cell - White with alpha
 
 // Maze save path
@@ -106,7 +112,7 @@ public void setup(){
   theFinish.isFinish = true;
 
   // Go to the first cell in the grid to start
-  current = (Cell) grid.get(startPos);
+  current = theStart;
 }
 
 
@@ -117,29 +123,37 @@ public void draw(){
     Cell each = (Cell) grid.get(i);
     each.show(false);
   }
-  // Step 1 per wikipedia
+  // Step 1 per wikipedia:
+  // Mark the current cell as visited, and highlight it with the visited color
   current.visited = true;
   current.highlight(highlightColor);
+  // Now check if any of the neighbors is valid and assign it to "next"
   Cell next = current.checkNeighbors();
 
+  // If there is a neighbor, mark that one as visited, add the current cell to
+  // the stack, remove the walls between current and next,
+  // and make "next" the current cell. This way we move along the grid.
   if(next != null){
-    next.visited = true;
-    // Step 2
-    stack.add(current);
-    // Step 3
-    removeWalls(current,next);
-    // Step 4
-    current = next;
+    next.visited = true;          // Mark the neighbor as visited
+    stack.add(current);           // we're moving out of the current cell, add it to the stack
+    current.isInStack = true;     // Mark "current" boolean for in stack.
+    removeWalls(current,next);    // remove the walls between current and next
+    current = next;               // move to next
   }
 
-// If the stack has something, then remove the last cell of the stack
-// and make the new last cell of the stack the current one
+  // If there are no neighbors, it means we reached a dead end, we gotta go back.
+  // So, if the stack has something, go to the previous cell in the stack by
+  // removing the las cell and making the new last cell the current one.
   else if (stack.size() > 0) {
-    int last = stack.size()-1;  //
-    println("last=" + last + " Stack size=" + stack.size());
-    stack.remove(last);
+    int last = stack.size()-1;                                // define the index for the last cell
+    println("last=" + last + " Stack size=" + stack.size());  // print for debug
+    Cell lastCell = (Cell) stack.get(last);                   // get the last cell
+    lastCell.isInStack = false;                               // remove the in stack boolean
+    stack.remove(last);                                       // remove the last cell
     // println("new stack length=" + stack.size());
 
+    // We need to check if the stack still has anything before trying to make
+    // the "last" cell the current one, or else there will be an error.
     if(stack.size() > 0) {
       last = last-1;
       current = (Cell) stack.get(last);
@@ -147,8 +161,8 @@ public void draw(){
     }
   }
   else if (stack.size() == 0) {
-    // The stack is empty and there's no more neigbors:
-    // the maze is done!
+    // Otherwise, if the stack is empty and there's no more neigbors,
+    // it means the maze is done!
     // Let's save it as a PDF
 
     // Assign a name to the PDF file
@@ -156,8 +170,7 @@ public void draw(){
 
     // To save the maze we'll re-draw the grid
     // now with the walls as they ended up being after
-    // carving the maze. And it's shown in white to be
-    // printer friendly
+    // carving the maze. And it's shown in white to be printer friendly
 
     // We open the PDF with PGraphics so we can specify the size of the PDF with the size of the script
     pdfMaze = (PGraphicsPDF) createGraphics (wd,ht,PDF,fileName);
@@ -176,14 +189,14 @@ public void draw(){
     }
     // Done, end recording the PDF
     endRecord();
-    // Bluff
+    // Bluff about your awesomeness
     println("Finished saving PDF");
     println("Saving JSON file");
     // Now let's save the maze in a JSON file so it can be solved later
     saveJMaze();
-    println("Printing the Maze");
     // And now, let's send the PDF maze to Acrobat reader and print it so you can solve it by hand
-    printTheMaze(fileName);
+    println("Printing the Maze");
+    printTheMaze(fileName);       // will open reader, load the maze, and print it skipping the print dialog. Check the function for more info
     println("Done. Ba-bye!");
     // We're done. Bye bye baby!
     // exit(); is important because we're using PGraphics
@@ -198,17 +211,16 @@ class Cell{
   int j; // coordinate for rows
   int i; // coordinate for columns
   boolean[] walls = {true,true,true,true}; //top,right,bottom,left
-  boolean visited = false;  // has this cell been visited before?
-  boolean isStart = false;  // is this cell the start of the maze?
-  boolean isFinish = false; // is this cell the finish of the maze?
-
+  boolean visited = false;    // has this cell been visited before?
+  boolean isStart = false;    // is this cell the start of the maze?
+  boolean isFinish = false;   // is this cell the finish of the maze?
+  boolean isInStack = false;  // is this cell part of the stack?
 
   // this is the constructor
   Cell(int col, int row){
     i = col;
     j = row;
   }
-
 
   // Calculate the index of the previous cell to find it in the ArrayList
   public int index(int i, int j){
@@ -218,8 +230,6 @@ class Cell{
     return i+j*cols;
   }
 
-
-
   // This function checks if the cell exists in the array,
   // and catches Java's error if it doesn't, preventing the
   // program to halt.
@@ -227,8 +237,6 @@ class Cell{
     if(theIndex == -1) return false; // if it doesn't exists, then catch the error and return false
     else return true; // if it exists, then return true
   }
-
-
 
   public Cell checkNeighbors(){
     ArrayList neighbors = new ArrayList();
@@ -267,7 +275,6 @@ class Cell{
       }
     }
 
-
     // If the neighbors ArrayList has anything on it, return me a random neighbor
     if(neighbors.size() > 0){
       int r = floor(random(0,neighbors.size()));
@@ -278,8 +285,6 @@ class Cell{
       }
 
       } //end of checkNeighbors
-
-
 
       // This function will draw the edges of the cell
       public void show(boolean theEnd){
@@ -295,30 +300,41 @@ class Cell{
         int x = i*w;
         int y = j*w;
 
+        // DEFINING COLORS:
+        // If it's not the end yet, check if the cell has been visited or not
+        // If it has been visited, check if it's in the stack or not.
+        // If it's not in the stack, paint it with the color for visited cells
+        // If it hasn't been visited, paint it white
+        // If it's the end, we want to show the whole maze as white. So paint them all white.
         if(!theEnd){
           if(visited) {
-            fill(cellColor);
-          } else {
-            fill(endColor);
+            if (isInStack){ fill(stackColor);}
+            else {fill(cellColor);}
+            } else {
+              fill(endColor);
+            }
           }
-        }
         else {
           fill(endColor);
         }
         noStroke();
         rect(x,y,w,w);
 
+        // Now, paint the walls in black
         stroke(0);
         if(walls[0]) line(x,y,x+w,y);      //top
         if(walls[1]) line(x+w,y,x+w,y+w);  //right
         if(walls[2]) line(x+w,y+w,x,y+w);  //bottom
         if(walls[3]) line(x,y+w,x,y);      //left
 
-
-
         } // End of Show()
 
         public void highlight(int theColor){
+          // Paint the cell, but leave a border of "border" thickness
+          // so we paint a square of the whole cell size
+          // then we overlay a smaller square
+          // and then we paint the walls.
+          // This will allow to the walls to be visible.
           int x = i*w;
           int y = j*w;
 
@@ -406,17 +422,18 @@ public void printTheMaze(String theMaze){
   // HKEY_CURRENT_USER\Software\Adobe>product<>version<\AVGeneral\bprintAutoRotate
   // and change the REG_DWORD Value to 1 for auto-rotate
   // If you don't want to (know how to) change your registry keys, then simply change the parameter
-  // for quiet printing from "/t" to "/p" (launchThis[3])
+  // for quiet printing from "/t" to "/p" (launchThis[3]) to show the print dialog
 
   // Lets assemble the string of parameters (Acrobat, parameters, filename)
+  // Each parameter needs to be in its own object, this is because of how launch() works
   String[] launchThis = new String[5];{
     launchThis[0] = rdrLocation;  // Where can I find Acrobat Reader?
     launchThis[1] = "/n";         // to open a new instance of reader even if another one is aleady open
     launchThis[2] = "/o";         // to skip the "open" dialog
     launchThis[3] = "/t";         // to print quietly (skip print dialog), otherwise "/p" to go through the print dialog
-    launchThis[4] = sketchPath("") + theMaze;      //
+    launchThis[4] = sketchPath("") + theMaze;      // Get the maze file path
   }
-  // show what got assembled
+  // show what got assembled for debug
   println("launching: " + launchThis[0] + " " + launchThis[1] + " " + launchThis[2] + " " + launchThis[3] + " " + launchThis[4]);
   // launch acrobat reader with the specified parameters
   launch(launchThis);
