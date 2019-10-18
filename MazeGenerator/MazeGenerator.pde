@@ -16,9 +16,13 @@
 import processing.pdf.*;
 import java.io.FilenameFilter;
 
+int wdInch = 17;
+int htInch = 11;
+int pxtoIn = 96;
+
 // Some variables
-int wd = 1700;                    // width of the maze in pixels
-int ht = 1100;                    // height of the maze in pixels
+int wd = wdInch*pxtoIn;                    // width of the maze in pixels
+int ht = htInch*pxtoIn;                    // height of the maze in pixels
 int w = 10;                       // size of the cell in px
 int border;                       // spacing around the square that will be drawn for the start and finish cells so that the edges are not hidden
 int cols,rows;                    // to define the size of the maze
@@ -55,6 +59,7 @@ void settings(){
 
 void setup(){
   //initialize the maze
+  smooth();
   background(0);    // black bg
   border = w/10;    // set the border around the highlighted cell (to be able to show the walls)
 

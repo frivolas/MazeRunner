@@ -74,6 +74,7 @@ public void settings(){
 
 public void setup(){
   //initialize the maze
+  
   background(0);    // black bg
   border = w/10;    // set the border around the highlighted cell (to be able to show the walls)
 
